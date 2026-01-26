@@ -10,12 +10,19 @@ Designed for scalability, usability, and maintainability, this platform bridges 
 Technologies Used
 
 MongoDB – Stores user data, exam details, performance records, and course information.
+
 Express.js – Handles backend logic, APIs, and routing.
+
 React.js – Builds the interactive user interface and dashboards.
+
 Node.js – Runs the backend server and manages authentication and exam logic.
+
 JWT Authentication – Ensures secure login and role-based access control.
+
 React & javascript (Chatbot) – Powers the chatbot for course and skill recommendations.
+
 Tools & IDE: Visual Studio Code
+
 Version Control: Git & GitHub
 
 Mahima K JOHNY 
