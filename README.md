@@ -25,15 +25,13 @@ Tools & IDE: Visual Studio Code
 
 Version Control: Git & GitHub
 
-Mahima K JOHNY 
+Student Name & Contact Details:
 
-S10 IMCA 
-
-Register No:MGP21NMC043
-
-mahima.inmca2126@saintgits.org
-
-+91 8075151794
+                Mahima K JOHNY 
+                S10 IMCA 
+                Register No:MGP21NMC043
+                mahima.inmca2126@saintgits.org
+                +91 8075151794
 
 Project Guide :
          
