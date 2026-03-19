@@ -10,7 +10,7 @@ router.post('/add', async (req, res) => {
   try {
     const course = new Course({ name, code });
     await course.save();
-    res.status(200).json({ message: 'Course added successfully', course });
+    res.status(200).json({ message: 'Course  successfully', course });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Failed to add course', error: err.message });

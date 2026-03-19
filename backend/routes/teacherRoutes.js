@@ -6,80 +6,92 @@ import bcrypt from 'bcryptjs';
 
 const router = express.Router();
 
-/**
- * ADD TEACHER
- */
-router.post('/add', async (req, res) => {
-  const { name, subject, email, password, gender, dob, phoneNumber } = req.body;
+// ─── TEST ─────────────────────────────────────────────────────────────────────
+router.get('/test', (req, res) => {
+  res.json({ message: 'Teacher route working ✅' });
+});
 
-  if (!name || !subject || !email || !password || !gender || !dob || !phoneNumber) {
-    return res.status(400).json({ message: 'All fields are required' });
+// ─── ADD TEACHER ──────────────────────────────────────────────────────────────
+router.post('/add', async (req, res) => {
+  console.log('📥 BODY:', req.body);
+
+  const { name, email, password, gender, dob, phoneNumber, subjects } = req.body;
+
+  const missing = [];
+  if (!name)        missing.push('name');
+  if (!email)       missing.push('email');
+  if (!password)    missing.push('password');
+  if (!gender)      missing.push('gender');
+  if (!dob)         missing.push('dob');
+  if (!phoneNumber) missing.push('phoneNumber');
+
+  if (missing.length > 0) {
+    return res.status(400).json({ message: `Missing: ${missing.join(', ')}` });
   }
+
+  // Accept subjects as array or comma string
+  let rawSubjects = subjects;
+  if (typeof rawSubjects === 'string') {
+    rawSubjects = rawSubjects.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  if (!Array.isArray(rawSubjects) || rawSubjects.length === 0) {
+    return res.status(400).json({ message: 'Please select at least one subject.' });
+  }
+
+  const cleanSubjects = [...new Set(rawSubjects.map(s => s.trim()).filter(Boolean))];
 
   try {
     const existing = await Teacher.findOne({ email });
-    if (existing) return res.status(400).json({ message: 'Teacher with this email already exists' });
+    if (existing) {
+      return res.status(400).json({ message: 'A teacher with this email already exists.' });
+    }
 
-    // Hash the password before saving
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const teacher = await Teacher.create({
-      name,
-      subject,
-      email,
-      password: hashedPassword,
-      gender,
-      dob,
-      phoneNumber
+      name, email, password: hashedPassword,
+      gender, dob, phoneNumber,
+      subjects: cleanSubjects
     });
 
     return res.status(201).json({
       message: 'Teacher added successfully',
       teacher: {
-        _id: teacher._id,
-        name: teacher.name,
-        subject: teacher.subject,
-        email: teacher.email,
-        gender: teacher.gender,
-        dob: teacher.dob,
+        _id:         teacher._id,
+        name:        teacher.name,
+        subjects:    teacher.subjects,
+        email:       teacher.email,
+        gender:      teacher.gender,
+        dob:         teacher.dob,
         phoneNumber: teacher.phoneNumber,
-        createdAt: teacher.createdAt,
-        updatedAt: teacher.updatedAt
       }
     });
 
   } catch (err) {
-    console.error('ADD TEACHER ERROR:', err);
+    console.error('❌ ERROR:', err);
     if (err.code === 11000) {
-      return res.status(400).json({ message: `Teacher with this ${Object.keys(err.keyValue)[0]} already exists` });
+      return res.status(400).json({
+        message: `A teacher with this ${Object.keys(err.keyValue)[0]} already exists.`
+      });
     }
-    return res.status(400).json({ message: err.message || 'MongoDB error' });
+    return res.status(500).json({ message: err.message || 'Server error' });
   }
 });
 
-
-/**
- * UPLOAD QUESTION
- */
-router.post("/uploadQuestion", async (req,res) => {
-  try{
+// ─── UPLOAD QUESTION ─────────────────────────────────────────────────────────
+router.post('/uploadQuestion', async (req, res) => {
+  try {
     const { text, type, options, answer, difficulty, level } = req.body;
-
     const newQuestion = await Question.create({
-      text,
-      type,
-      options: type === "MCQ" ? options : [], // save empty array for descriptive
-      answer,
-      difficulty, // -1 easy, 0 medium, 1 hard
-      level
+      text, type,
+      options: type === 'MCQ' ? options : [],
+      answer, difficulty, level
     });
-
-    res.json({ message: "Question uploaded successfully", question: newQuestion });
-  } catch(err) {
+    res.json({ message: 'Question uploaded successfully', question: newQuestion });
+  } catch (err) {
     console.error('UPLOAD QUESTION ERROR:', err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: 'Server error' });
   }
 });
-
 
 export default router;

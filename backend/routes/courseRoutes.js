@@ -31,4 +31,15 @@ router.get("/all", async (req, res) => {
   }
 });
 
+// Delete a course
+router.delete("/:id", async (req, res) => {
+  try {
+    const deleted = await Course.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ message: "Course not found" });
+    res.json({ message: "Course deleted" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to delete", error: err.message });
+  }
+});
+
 export default router;

@@ -10,71 +10,51 @@ import AddTeacher from './AddTeacher';
 import TeacherDashboard from './TeacherDashboard';
 import StudentMaterials from './StudentMaterials';
 import TeacherUploadQuestion from "./TeacherUploadQuestion";
-
-
-
+import StudentExam from './StudentExam';
+import StudentProgressDashboard from './StudentProgressDashboard';
+import ProgressReport from './ProgressReport'; // ✅ ADD THIS IMPORT
+import AdminAnalytics from './AdminAnalytics';
 
 function App() {
   return (
     <Router>
       <Routes>
 
-        {/* Login */}
+        {/* Auth */}
         <Route path="/admin-login" element={<AdminLogin />} />
+        <Route path="/student-registration" element={<StudentRegistration />} />
 
-        {/* Student Registration */}
+        {/* Admin */}
         <Route
-          path="/student-registration"
-          element={<StudentRegistration />}
+          path="/admin-dashboard"
+          element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>}
         />
-
-        {/* Admin Dashboard (Protected) */}
-        <Route 
-          path="/admin-dashboard" 
-          element={
-            <ProtectedRoute>
-              <AdminDashboard />
-            </ProtectedRoute>
-          } 
+        <Route
+          path="/add-course"
+          element={<ProtectedRoute><AddCourse /></ProtectedRoute>}
         />
- {/* add course */}
-       <Route 
-  path="/add-course" 
-  element={
-    <ProtectedRoute>
-      <AddCourse />
-    </ProtectedRoute>
-  } 
-/>
-<Route path="/topics" element={<Topics />} />
-
-
-{/* teacher */}
+        <Route
+          path="/add-teacher"
+          element={<ProtectedRoute><AddTeacher /></ProtectedRoute>}
+        />
 <Route
-  path="/add-teacher"
-  element={
-    <ProtectedRoute>
-      <AddTeacher />
-    </ProtectedRoute>
-  }
+  path="/admin-analytics"
+  element={<ProtectedRoute><AdminAnalytics /></ProtectedRoute>}
 />
-<Route
-  path="/student/materials/:subject"
-  element={<StudentMaterials />}
-/>
-<Route path="/teacher-dashboard" element={<TeacherDashboard />} />
+        {/* Teacher */}
+        <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
+        <Route path="/teacher/upload-question" element={<TeacherUploadQuestion />} />
+        <Route path="/teacher/progress-report" element={<ProgressReport />} /> {/* ✅ ADD THIS */}
+        <Route path="/topics" element={<Topics />} />
 
- {/* student dashboard*/}
- <Route path="/student-dashboard" element={<StudentDashboard />} />
-        {/* Default redirect */}
+        {/* Student */}
+        <Route path="/student-dashboard" element={<StudentDashboard />} />
+        <Route path="/student-exam" element={<StudentExam />} />
+        <Route path="/student/materials/:subject" element={<StudentMaterials />} />
+        <Route path="/student-progress" element={<StudentProgressDashboard />} />
+
+        {/* Default — MUST be last */}
         <Route path="*" element={<Navigate to="/admin-login" />} />
-
-
-
-        <Route
-          path="/teacher/upload-question"
-          element={<TeacherUploadQuestion />}
-        />
 
       </Routes>
     </Router>
@@ -82,4 +62,3 @@ function App() {
 }
 
 export default App;
-
