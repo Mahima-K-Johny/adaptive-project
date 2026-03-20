@@ -507,7 +507,7 @@ export default function StudentDashboard() {
 
         <nav className="sd-sidebar-nav">
           <button className="sd-nav-item sd-nav-active"><Layers size={16} /><span>Dashboard</span></button>
-          <button className="sd-nav-item" onClick={() => navigate('/topics')}><BookOpen size={16} /><span>Topics</span></button>
+          <button className="sd-nav-item" onClick={() => navigate('/topics')}><BookOpen size={16} /><span>Courses</span></button>
           <button className="sd-nav-item" onClick={() => setShowNotes(true)}>
             <FileText size={16} /><span>Study Materials</span>
             {notes.length > 0 && <span className="sd-nav-badge">{notes.length}</span>}
@@ -547,9 +547,9 @@ export default function StudentDashboard() {
             <div className="sd-card-accent" />
             <div className="sd-card-body">
               <div className="sd-card-icon-wrap sd-ci-blue"><BookOpen size={26} /></div>
-              <h3 className="sd-card-title">Topics</h3>
-              <p className="sd-card-desc">Explore all available courses and learning topics.</p>
-              <button className="sd-card-btn sd-btn-blue">Browse Topics →</button>
+              <h3 className="sd-card-title">Courses</h3>
+              <p className="sd-card-desc">Explore all available courses.</p>
+              <button className="sd-card-btn sd-btn-blue">Browse Courses →</button>
             </div>
           </div>
 

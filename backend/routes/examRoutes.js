@@ -2,8 +2,18 @@
 import express from 'express';
 import ExamSession from '../models/ExamSession.js';
 import Question    from '../models/Question.js';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const router = express.Router();
+
+
+// ── Startup check ──
+if (process.env.GEMINI_API_KEY) {
+  console.log('🔑 GEMINI_API_KEY detected in environment.');
+} else {
+  console.warn('⚠️ GEMINI_API_KEY missing in environment (Check .env file)');
+}
+
 // Count all exam sessions
 router.get('/count', async (req, res) => {
   try {
@@ -14,18 +24,33 @@ router.get('/count', async (req, res) => {
   }
 });
 const LEVEL_CONFIG = {
-  1: { total: 10, mcq: 8,  desc: 2, label: 'Easy',         passMark: 60 },
-  2: { total: 15, mcq: 10, desc: 5, label: 'Intermediate',  passMark: 60 },
-  3: { total: 10, mcq: 6,  desc: 4, label: 'Difficult',     passMark: 60 },
+  1: { total: 10, mcq: 8,  maq: 1, desc: 1, label: 'Easy',         passMark: 60 },
+  2: { total: 15, mcq: 10, maq: 2, desc: 3, label: 'Intermediate',  passMark: 60 },
+  3: { total: 10, mcq: 4,  maq: 3, desc: 3, label: 'Difficult',     passMark: 60 },
 };
 
 function getDifficultyConfig(level, failCount) {
-  const base  = LEVEL_CONFIG[level];
-  const total = base.total;
-  const shift = Math.min(failCount, Math.floor(total / 2)) * 2;
-  const mcq   = Math.max(0, base.mcq  - shift);
-  const desc  = Math.min(total, base.desc + shift);
-  return { ...base, mcq, desc };
+  const base = LEVEL_CONFIG[level];
+  
+  // Specific Adaptive Logic for Level 1 (as requested by user)
+  if (level === 1) {
+    if (failCount === 0) return { ...base, mcq: 8, maq: 1, desc: 1 };
+    if (failCount === 1) return { ...base, mcq: 6, maq: 2, desc: 2 };
+    return { ...base, mcq: 4, maq: 3, desc: 3 }; // 2+ fails
+  }
+
+  // Proportional Logic for other levels (if failCount > 0)
+  if (failCount > 0) {
+    const shift = Math.min(failCount, 2);
+    return {
+      ...base,
+      mcq:  Math.max(0, base.mcq - (shift * 2)),
+      maq:  base.maq + shift,
+      desc: base.desc + shift
+    };
+  }
+
+  return base;
 }
 
 function shuffle(arr) {
@@ -49,9 +74,112 @@ function shuffle(arr) {
  *   - All keywords required  → student must include EVERY keyword  (matchAll mode)
  *   - Default (any keyword)  → student must include AT LEAST ONE keyword (matchAny mode)
  *
- * The question document may carry a `keywordMode` field: 'any' | 'all'  (default 'any').
+ * The question document may carry a `keywordMode` field: 'any' | 'all'
  */
-function gradeDescriptive(question, studentAnswer) {
+/**
+ * Grades multiple descriptive answers in ONE AI call to optimize efficiency.
+ */
+async function gradeBatchDescriptive(batch) {
+  if (!process.env.GEMINI_API_KEY || batch.length === 0) return {};
+
+  try {
+    console.log(`🤖 Attempting BATCH AI Grade (${batch.length} questions)...`);
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+
+    // Construct a clear prompt for multiple questions
+    let prompt = `You are a strict but fair AI teacher. Evaluate the following student answers.
+For each item, respond ONLY with "true" if the core meaning is correct, or "false" if not.
+Return the results in a JSON array of boolean values in the same order as provided.
+
+Example Response: [true, false, true]
+
+Items to evaluate:
+`;
+
+    batch.forEach((item, i) => {
+      prompt += `
+[ITEM ${i}]
+Question: "${item.question.text}"
+Student Answer: "${item.studentAnswer}"
+Required Concepts: ${item.question.answer}
+`;
+    });
+
+    const result = await model.generateContent(prompt);
+    let output = result.response.text().trim();
+    
+    // Clean up potential markdown formatting in AI response
+    output = output.replace(/```json|```/g, '').trim();
+    
+    console.log('🤖 Batch AI response:', output);
+    const results = JSON.parse(output);
+    
+    const resultMap = {};
+    batch.forEach((item, i) => {
+      resultMap[item.question._id.toString()] = !!results[i];
+    });
+    return resultMap;
+  } catch (err) {
+    console.error("❌ Batch AI Grading failed:", err.message);
+    return null; // Signals failure to use fallback logic
+  }
+}
+
+async function gradeDescriptive(question, studentAnswer) {
+  // ── AI Grading Block ──
+  if (process.env.GEMINI_API_KEY) {
+    try {
+      console.log('🤖 Attempting AI Grade (Gemini Flash Latest)...');
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+      
+      // Use "gemini-flash-latest" as it's more stable for quotas
+      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+      
+      const prompt = `You are a strict but fair AI teacher. 
+Question: "${question.text}"
+Student Answer: "${studentAnswer}"
+Required concepts or keywords that must be covered: ${question.answer}
+
+Did the student's answer correctly address the required concepts in the context of the question?
+Respond ONLY with the exact word "true" if the core meaning is correct (even if worded differently), or "false" if it is incorrect or completely missing the core concepts.`;
+
+      const result = await model.generateContent(prompt);
+      const output = result.response.text().trim().toLowerCase();
+      console.log('🤖 Gemini response:', output);
+      
+      if (output.includes("true")) return true;
+      if (output.includes("false")) return false;
+      
+    } catch (err) {
+      console.error("❌ Gemini Flash Latest failed (Quota?):", err.message);
+      
+      // Secondary fallback to Gemini 2.0 Flash
+      try {
+        console.log('🤖 Falling back to Gemini 2.0 Flash...');
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        
+        const prompt = `Is this answer correct for the question? 
+Question: "${question.text}" 
+Answer: "${studentAnswer}" 
+Keywords: ${question.answer}. 
+Reply 'true' or 'false' only.`;
+        
+        const result = await model.generateContent(prompt);
+        const output = result.response.text().trim().toLowerCase();
+        console.log('🤖 Gemini 2.0 Flash response:', output);
+        if (output.includes("true")) return true;
+        if (output.includes("false")) return false;
+      } catch (fallbackErr) {
+        console.error("❌ All Gemini models failed, falling back to keyword logic:", fallbackErr.message);
+      }
+    }
+  } else {
+    console.warn('⚠️ GEMINI_API_KEY not set — using keyword fallback.');
+  }
+
+  // ── Original Keyword Matching (Fallback) ──
   const raw = studentAnswer?.trim().toLowerCase() ?? '';
 
   // Normalise keywords
@@ -80,18 +208,27 @@ function gradeDescriptive(question, studentAnswer) {
 
 async function fetchBatch(level, subject, config) {
   const needed = config.total;
+  
   const allMCQ  = await Question.find({ level, subject, type: 'MCQ' }).lean();
+  const allMAQ  = await Question.find({ level, subject, type: 'MAQ' }).lean();
   const allDesc = await Question.find({ level, subject, type: 'Descriptive' }).lean();
+  
   const mcqPool  = shuffle(allMCQ);
+  const maqPool  = shuffle(allMAQ);
   const descPool = shuffle(allDesc);
+  
   let picked = [
     ...mcqPool.slice(0, config.mcq),
+    ...maqPool.slice(0, config.maq),
     ...descPool.slice(0, config.desc),
   ];
+
+  // Fallback: If not enough specific types found, fill with anything available
   if (picked.length < needed) {
     const pickedIds = new Set(picked.map(q => q._id.toString()));
     const extras = shuffle([
       ...mcqPool.filter(q => !pickedIds.has(q._id.toString())),
+      ...maqPool.filter(q => !pickedIds.has(q._id.toString())),
       ...descPool.filter(q => !pickedIds.has(q._id.toString())),
     ]);
     for (const q of extras) {
@@ -99,6 +236,7 @@ async function fetchBatch(level, subject, config) {
       picked.push(q);
     }
   }
+  
   return shuffle(picked).slice(0, needed);
 }
 
@@ -145,7 +283,7 @@ router.post('/startExam', async (req, res) => {
     const failCount = await getFailCount(String(studentId), subject, 1);
     const config    = getDifficultyConfig(1, failCount);
 
-    console.log(`📊 Level 1 | subject="${subject}" | failCount=${failCount} | MCQ=${config.mcq} Desc=${config.desc}`);
+    console.log(`📊 Level 1 | subject="${subject}" | failCount=${failCount} | MCQ=${config.mcq} MAQ=${config.maq} Desc=${config.desc}`);
     console.log('='.repeat(50));
 
     const session = await ExamSession.create({
@@ -171,7 +309,7 @@ router.post('/startExam', async (req, res) => {
       questions,
       failCount,
       difficultyNote: failCount > 0
-        ? `Attempt ${failCount + 1}: ${config.desc} descriptive questions (harder)`
+        ? `Attempt ${failCount + 1}: ${config.maq} MAQ and ${config.desc} Descriptive questions (Adaptive Harder)`
         : null,
     });
   } catch (err) {
@@ -196,14 +334,43 @@ router.post('/submitAnswers', async (req, res) => {
     let   correctCount = 0;
     const reviewData   = [];
 
+    // ── Pre-fetch Descriptive AI Scores (BATCH) ───────────────────────────
+    const descItems = [];
+    for (const ans of answers) {
+      const q = await Question.findById(ans.questionId).lean();
+      if (q && q.type === 'Descriptive') {
+        descItems.push({ question: q, studentAnswer: ans.answer });
+      }
+    }
+
+    const batchResults = descItems.length > 0 
+      ? await gradeBatchDescriptive(descItems) 
+      : {};
+
     for (const ans of answers) {
       const question = await Question.findById(ans.questionId);
       if (!question) continue;
 
       // ── Grading ────────────────────────────────────────────────────────
-      const correct = question.type === 'MCQ'
-        ? question.answer.trim() === ans.answer.trim()
-        : gradeDescriptive(question, ans.answer);   // ✅ multi-keyword grading
+      let correct = false;
+      if (question.type === 'MCQ') {
+        correct = typeof question.answer === 'string' && typeof ans.answer === 'string'
+          ? question.answer.trim() === ans.answer.trim()
+          : question.answer === ans.answer;
+      } else if (question.type === 'MAQ') {
+        const qAns = Array.isArray(question.answer) ? [...question.answer] : [];
+        const sAns = Array.isArray(ans.answer) ? [...ans.answer] : [];
+        qAns.sort(); sAns.sort();
+        correct = qAns.length === sAns.length && qAns.every((val, i) => val === sAns[i]);
+      } else {
+        // Use batch results if available, otherwise fallback to single AI or keywords
+        const qIdStr = question._id.toString();
+        if (batchResults && batchResults[qIdStr] !== undefined) {
+          correct = batchResults[qIdStr];
+        } else {
+          correct = await gradeDescriptive(question, ans.answer);
+        }
+      }
 
       if (correct) correctCount++;
       session.ability += correct ? 0.3 : -0.2;
@@ -257,7 +424,7 @@ router.post('/submitAnswers', async (req, res) => {
         currentAbility: parseFloat(session.ability.toFixed(3)),
         failCount:      nextFailCount,
         difficultyNote: nextFailCount > 0
-          ? `Attempt ${nextFailCount + 1}: ${nextConfig.desc} descriptive questions`
+          ? `Attempt ${nextFailCount + 1}: ${nextConfig.maq} MAQ and ${nextConfig.desc} Descriptive questions`
           : null,
       });
     }

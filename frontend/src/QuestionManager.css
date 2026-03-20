@@ -237,3 +237,92 @@
   text-align: center; color: #94a3b8; padding: 40px 0;
   display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 0.85rem;
 }
+
+/* MCQ Modern UI */
+.qm-options-modern {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.qm-option-modern-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  position: relative;
+}
+.qm-option-modern-wrap:focus-within {
+  border-color: #cbd5e1;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+.qm-option-modern-correct {
+  border-color: #10b981 !important;
+  background: #ecfdf5 !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+}
+.qm-option-radio input[type="radio"] {
+  width: 18px; height: 18px;
+  accent-color: #10b981;
+  cursor: pointer;
+  margin: 0;
+}
+.qm-option-input {
+  border: none !important;
+  background: transparent !important;
+  padding: 4px !important;
+  font-size: 0.85rem !important;
+  flex: 1;
+}
+.qm-option-input:focus {
+  outline: none; box-shadow: none;
+}
+.qm-option-check-icon {
+  color: #10b981;
+}
+
+/* AI Grading Elements */
+.qm-ai-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+}
+.qm-ai-badge {
+  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 99px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.qm-ai-status-text {
+  font-size: 0.78rem;
+  color: #0369a1;
+  font-weight: 500;
+}
+.qm-ai-special-hint {
+  font-size: 0.72rem;
+  color: #64748b;
+  background: #f8fafc;
+  padding: 8px 12px;
+  border-left: 3px solid #6366f1;
+  border-radius: 0 8px 8px 0;
+  line-height: 1.4;
+  margin-top: 4px;
+}
+.qm-keyword-num-ai {
+  background: #6366f1 !important;
+  color: #fff !important;
+}

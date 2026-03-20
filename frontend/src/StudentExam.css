@@ -401,6 +401,36 @@
 .se-desc-input:focus { border-color: var(--se-primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.12); background: #f8faff; }
 .se-desc-hint { font-size: 0.78rem; color: var(--se-soft); margin-top: 0.5rem; }
 
+/* AI Evaluation Banner */
+.se-ai-eval-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: linear-gradient(135deg, #eef2ff, #f0f9ff);
+  border: 1.5px solid #bfdbfe;
+  border-radius: var(--se-radius-sm);
+  padding: 0.65rem 1rem;
+  margin-bottom: 0.75rem;
+  animation: se-up 0.3s ease both;
+}
+.se-ai-eval-badge {
+  background: linear-gradient(135deg, #4f46e5, #0ea5e9);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.se-ai-eval-text {
+  font-size: 0.78rem;
+  color: #1e40af;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
 /* Q navigation row */
 .se-q-nav-row { display: flex; justify-content: space-between; gap: 0.75rem; }
 .se-q-prev, .se-q-next {
@@ -576,4 +606,188 @@
   background: #fef2f2;
   border-color: #fca5a5;
   color: #7f1d1d;
+}
+
+/* ── Proctoring Overlays ─────────────────────────────────────────────────── */
+.se-proctor-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  animation: fadeIn 0.3s ease both;
+}
+
+.se-proctor-overlay.warning {
+  background: rgba(251, 191, 36, 0.2);
+  backdrop-filter: blur(12px);
+}
+
+.se-proctor-card {
+  background: white;
+  padding: 3rem;
+  border-radius: 24px;
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  animation: se-up 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.se-proctor-card h2 {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 900;
+  color: #0f172a;
+  font-size: 0.75rem;
+}
+
+.se-proctor-overlay.face-missing {
+  background: rgba(239, 68, 68, 0.15);
+  backdrop-filter: blur(12px);
+}
+
+.se-face-warning-icon {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ef4444;
+  background: #fef2f2;
+  border-radius: 20px;
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.se-face-scanner {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: #ef4444;
+  box-shadow: 0 0 10px #ef4444;
+  animation: se-scan 2s linear infinite;
+}
+
+@keyframes se-scan {
+  0% { top: 0; }
+  50% { top: 100%; }
+  100% { top: 0; }
+}
+
+.se-face-countdown {
+  font-family: 'Nunito', sans-serif;
+  font-size: 4rem;
+  font-weight: 900;
+  color: #ef4444;
+  margin: 1rem 0;
+  text-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.se-proctor-card p {
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.se-violation-badge {
+  background: #fef2f2;
+  color: #ef4444;
+  font-weight: 800;
+  padding: 8px 20px;
+  border-radius: 999px;
+  border: 2px solid #fee2e2;
+  font-size: 1.1rem;
+  margin: 0.5rem 0;
+}
+
+.se-small-text {
+  font-size: 0.8rem;
+  color: #94a3b8 !important;
+}
+
+.se-start-btn.warning {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── Camera Feed Styling ─────────────────────────────────────────────────── */
+.se-camera-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 180px;
+  background: #fff;
+  border-radius: 16px;
+  border: 2px solid var(--se-primary);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  overflow: hidden;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  animation: se-camera-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes se-camera-in {
+  from { opacity: 0; transform: translateY(20px) scale(0.9); }
+  to { opacity: 1; transform: none; }
+}
+
+.se-camera-header {
+  background: var(--se-primary);
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.se-camera-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff4d4d;
+  box-shadow: 0 0 8px #ff4d4d;
+  animation: se-blink 1s infinite;
+}
+
+@keyframes se-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.se-camera-video {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  background: #000;
+  transform: scaleX(-1);
+}
+
+.se-camera-placeholder {
+  position: absolute;
+  inset: 0;
+  background: #1e293b;
+  color: #94a3b8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.75rem;
 }

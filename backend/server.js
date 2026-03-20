@@ -1,6 +1,5 @@
 // server.js
-import dotenv from 'dotenv';
-dotenv.config(); // ✅ Must be FIRST — loads .env before anything else reads process.env
+import 'dotenv/config'; // ✅ Must be FIRST in ESM — loads before other imports evaluate
 
 import express    from 'express';
 import mongoose   from 'mongoose';

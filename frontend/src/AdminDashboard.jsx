@@ -3,10 +3,11 @@ import {
   Users, GraduationCap, BookOpen, FileText,
   LogOut, X, Bell, HelpCircle, Trash2, Filter, BarChart2,
   LayoutDashboard, ChevronRight, TrendingUp, Award, Plus,
-  Search, Settings, Sparkles, Zap, Clock
+  Search, Settings, Sparkles, Zap, Clock, Edit2, Download
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import QuestionManager from './QuestionManager';
 
 const LEVEL_LABELS = { 1: 'Easy', 2: 'Intermediate', 3: 'Difficult' };
 const LEVEL_STYLES = {
@@ -30,6 +31,7 @@ export default function AdminDashboard() {
   const [notes,         setNotes]         = useState([]);
 
   const [showQuestions,   setShowQuestions]   = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState(null);
   const [questions,       setQuestions]       = useState([]);
   const [qSubjects,       setQSubjects]       = useState([]);
   const [selectedSubject, setSelectedSubject] = useState('all');
@@ -104,7 +106,7 @@ export default function AdminDashboard() {
     { id: 'analytics', label: 'Analytics',      icon: BarChart2 },
     { id: 'teachers',  label: 'Teachers',        icon: GraduationCap },
     { id: 'students',  label: 'Students',        icon: Users },
-    { id: 'topics',    label: 'Topics',          icon: BookOpen },
+    { id: 'topics',    label: 'Courses',         icon: BookOpen },
     { id: 'materials', label: 'Study Materials', icon: FileText },
     { id: 'questions', label: 'Question Bank',   icon: HelpCircle },
   ];
@@ -128,7 +130,7 @@ export default function AdminDashboard() {
   const quickActions = [
     { label: 'Add Course',   icon: Plus,          gradient: 'linear-gradient(135deg,#10b981,#059669)', action: () => navigate('/add-course') },
     { label: 'Add Teacher',  icon: GraduationCap, gradient: 'linear-gradient(135deg,#667eea,#764ba2)', action: () => navigate('/add-teacher') },
-    { label: 'View Topics',  icon: BookOpen,      gradient: 'linear-gradient(135deg,#06b6d4,#0ea5e9)', action: () => navigate('/topics') },
+    { label: 'View Courses', icon: BookOpen,      gradient: 'linear-gradient(135deg,#06b6d4,#0ea5e9)', action: () => navigate('/topics') },
     { label: 'Analytics',    icon: BarChart2,     gradient: 'linear-gradient(135deg,#f59e0b,#f97316)', action: () => navigate('/admin-analytics') },
     { label: 'Materials',    icon: FileText,      gradient: 'linear-gradient(135deg,#ec4899,#f43f5e)', action: () => { setShowNotes(true); fetchAllNotes(); } },
     { label: 'Questions',    icon: HelpCircle,    gradient: 'linear-gradient(135deg,#8b5cf6,#7c3aed)', action: openQuestionBank },
@@ -595,6 +597,10 @@ export default function AdminDashboard() {
                             style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px', background: 'linear-gradient(135deg,#667eea,#764ba2)', color: '#fff', borderRadius: 10, fontSize: 12, fontWeight: 700, textDecoration: 'none', boxShadow:'0 4px 10px rgba(102,126,234,.35)' }}>
                             <BookOpen size={13} /> View
                           </a>
+                          <a href={`http://localhost:5000/uploads/${note.fileUrl}`} download={note.title}
+                            style={{ width: 36, height: 36, borderRadius: 10, border: '1.5px solid #10b981', background: '#ecfdf5', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition:'all .18s', textDecoration: 'none' }}>
+                            <Download size={13} />
+                          </a>
                           <button onClick={() => handleDeleteNote(note._id)}
                             style={{ width: 36, height: 36, borderRadius: 10, border: '1.5px solid #fecdd3', background: '#fff1f2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition:'all .18s' }}>
                             <Trash2 size={13} />
@@ -665,10 +671,16 @@ export default function AdminDashboard() {
                     <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 99, background: 'linear-gradient(135deg,#eef2ff,#ede9fe)', color: '#4338ca', border:'1px solid #c7d2fe' }}>{q.subject}</span>
                     <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 99, ...(LEVEL_STYLES[q.level] || {}) }}>{LEVEL_LABELS[q.level]}</span>
                     <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 99, background: '#f1f5f9', color: '#475569', border:'1px solid #e2e8f0' }}>{q.type}</span>
-                    <button onClick={() => handleDeleteQuestion(q._id)}
-                      style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, padding: '5px 14px', borderRadius: 9, border: '1.5px solid #fecdd3', background: '#fff1f2', color: '#be123c', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition:'all .18s' }}>
-                      <Trash2 size={12} /> Delete
-                    </button>
+                    <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+                      <button onClick={() => setEditingQuestion(q)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 14px', borderRadius: 9, border: '1.5px solid #c7d2fe', background: '#eef2ff', color: '#4f46e5', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition:'all .18s' }}>
+                        <Edit2 size={12} /> Edit
+                      </button>
+                      <button onClick={() => handleDeleteQuestion(q._id)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 14px', borderRadius: 9, border: '1.5px solid #fecdd3', background: '#fff1f2', color: '#be123c', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition:'all .18s' }}>
+                        <Trash2 size={12} /> Delete
+                      </button>
+                    </div>
                   </div>
                   <p style={{ fontSize: 13.5, color: '#1e293b', lineHeight: 1.65, marginBottom: q.type === 'MCQ' ? 12 : 0, fontWeight:500 }}>{q.text}</p>
                   {q.type === 'MCQ' && q.options?.length > 0 && (
@@ -694,6 +706,17 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+      )}
+      {/* ══ EDIT QUESTION OVERLAY ══ */}
+      {editingQuestion && (
+        <QuestionManager
+          initialEditQuestion={editingQuestion}
+          assignedSubjects={qSubjects}
+          onClose={() => {
+            setEditingQuestion(null);
+            handleSubjectFilter(selectedSubject);
+          }}
+        />
       )}
     </div>
   );

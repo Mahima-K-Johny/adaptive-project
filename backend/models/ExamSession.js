@@ -9,7 +9,7 @@ const examSessionSchema = new mongoose.Schema({
   questionsAttempted: [
     {
       questionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Question' },
-      answer:     String,
+      answer:     { type: mongoose.Schema.Types.Mixed },
       correct:    Boolean,
       thetaAfter: Number,
     }

@@ -54,6 +54,11 @@ router.post('/create', async (req, res) => {
     if (type === 'MCQ' && !options.includes(answer)) {
       return res.status(400).json({ message: 'Answer must be one of the MCQ options.' });
     }
+    if (type === 'MAQ') {
+      if (!options || options.length < 2) return res.status(400).json({ message: 'MAQ must have at least 2 options.' });
+      if (!Array.isArray(answer) || answer.length === 0) return res.status(400).json({ message: 'MAQ answer must be an array of selected options.' });
+      if (!answer.every(ans => options.includes(ans))) return res.status(400).json({ message: 'All MAQ answers must be valid options.' });
+    }
 
     const question = await Question.create({ subject, text, type, options, answer, difficulty, level });
     res.status(201).json({ message: 'Question created successfully', question });
@@ -70,6 +75,43 @@ router.delete('/:id', async (req, res) => {
     if (!deleted) return res.status(404).json({ message: 'Question not found' });
     res.json({ message: 'Question deleted' });
   } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ── PUT update question ───────────────────────────────────────────────────────
+router.put('/:id', async (req, res) => {
+  try {
+    const { subject, text, type, options, answer, keywordMode, difficulty, level } = req.body;
+
+    if (!subject || !text || !type || !answer || difficulty === undefined || !level) {
+      return res.status(400).json({ message: 'All fields including subject are required.' });
+    }
+    if (type === 'MCQ' && (!options || options.length < 2)) {
+      return res.status(400).json({ message: 'MCQ must have at least 2 options.' });
+    }
+    if (type === 'MCQ' && !options.includes(answer)) {
+      return res.status(400).json({ message: 'Answer must be one of the MCQ options.' });
+    }
+    if (type === 'MAQ') {
+      if (!options || options.length < 2) return res.status(400).json({ message: 'MAQ must have at least 2 options.' });
+      if (!Array.isArray(answer) || answer.length === 0) return res.status(400).json({ message: 'MAQ answer must be an array of selected options.' });
+      if (!answer.every(ans => options.includes(ans))) return res.status(400).json({ message: 'All MAQ answers must be valid options.' });
+    }
+
+    const updatedQuestion = await Question.findByIdAndUpdate(
+      req.params.id,
+      { subject, text, type, options, answer, keywordMode, difficulty, level },
+      { new: true }
+    );
+
+    if (!updatedQuestion) {
+      return res.status(404).json({ message: 'Question not found' });
+    }
+
+    res.json({ message: 'Question updated successfully', question: updatedQuestion });
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 });
